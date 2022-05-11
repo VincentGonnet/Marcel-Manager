@@ -1,2 +1,5 @@
 .vscode/
+html/
 data/
+*.pdf
+*.exe
