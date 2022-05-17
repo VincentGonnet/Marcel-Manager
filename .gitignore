@@ -1,5 +1,9 @@
 .vscode/
-html/
+*.code-workspace
+
 data/
+
+html/
+
 *.pdf
 *.exe
