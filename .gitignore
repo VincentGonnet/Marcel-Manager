@@ -1,9 +1,11 @@
 .vscode/
 *.code-workspace
+tempCodeRunnerFile.py
 
 data/
 
 html/
+doxyfile
 
 *.pdf
 *.exe
