@@ -38,7 +38,7 @@ class App(tk.Tk):
         tk.Tk.__init__(self)
         self.title("Le Marcel Manager")
         self.resizable(False, False)
-        self.geometry("500x400")
+        self.geometry("600x400")
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
@@ -49,8 +49,8 @@ class App(tk.Tk):
     def init_variables(self):
         self.administrator_mode = "Administrator"
         self.usermode_button_foreground = "red"
-        self.bikes_db = {"fileCheck": "bikes123", "bikes": {}}
-        self.stations_db = {"fileCheck": "stations123"}
+        self.bikes_db = {"file_check": "bikes123", "bikes": [], "last_bike_number": 0}
+        self.stations_db = {"file_check": "stations123", "stations": []}
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
@@ -76,11 +76,21 @@ class App(tk.Tk):
         self.bike_list.grid_rowconfigure(0, weight=1)
         self.bike_list.grid_columnconfigure(0, weight=1)
         
-        self.load_bike_list(self.bike_list)
+        self.load_bike_list()
+
+        self.station_list = ttk.Frame(self, relief="ridge", borderwidth=3)
+        self.station_list.grid(row=1, column=1, padx=10, pady=3, sticky="w")
+        self.station_list.grid_rowconfigure(0, weight=1)
+        self.station_list.grid_columnconfigure(0, weight=1)
+        
+        self.load_station_list()
+
+        ttk.Button(self, text="Add bike", command=self.add_bike_window).grid(row=2, column=0, padx=10, pady=3, sticky="w")
+        ttk.Button(self, text="Add station", command=self.add_bike_window).grid(row=2, column=1, padx=10, pady=3, sticky="w")
 
     ## @brief load the bikes into a table
-    def load_bike_list(self, frame):
-        for widget in frame.winfo_children(): # delete the frame content (refresh process)
+    def load_bike_list(self):
+        for widget in self.bike_list.winfo_children(): # delete the frame content (refresh process)
             widget.destroy()
         
         self.bike_list_canvas = tk.Canvas(self.bike_list) # create the canvas that will contain the scrollbar and the list
@@ -90,23 +100,126 @@ class App(tk.Tk):
         self.bike_list_scrollbar.grid(row=0, column=1, sticky="ns")
         self.bike_list_canvas.configure(yscrollcommand=self.bike_list_scrollbar.set)
 
-        self.frame_data = tk.Frame(self.bike_list_canvas) # create the frame that will contain the data
-        self.bike_list_canvas.create_window((0, 0), window=self.frame_data, anchor='nw')
+        self.bikes_frame_data = tk.Frame(self.bike_list_canvas) # create the frame that will contain the data
+        self.bike_list_canvas.create_window((0, 0), window=self.bikes_frame_data, anchor='nw')
 
-        ttk.Label(self.frame_data, text="Bike n°").grid(row=0, column=0) #create the headers
-        ttk.Label(self.frame_data, text="Battery Left").grid(row=0, column=1)
+        ttk.Label(self.bikes_frame_data, text="Bike n°").grid(row=0, column=0) #create the headers
+        ttk.Label(self.bikes_frame_data, text="Battery Left").grid(row=0, column=1)
 
         # seed the list with the bikes' info
         index = 1
         for bike in self.bikes_db["bikes"]:
-            ttk.Label(self.frame_data, text=index).grid(row=index, column=0)
-            ttk.Label(self.frame_data, text=bike["battery_level"]).grid(row=index, column=1)
+            ttk.Label(self.bikes_frame_data, text=bike["number"]).grid(row=index, column=0)
+            ttk.Label(self.bikes_frame_data, text=bike["battery_level"]).grid(row=index, column=1)
             index += 1
 
-        self.frame_data.update_idletasks()  # update geometry of the frame
+        self.bikes_frame_data.update_idletasks()  # update geometry of the frame
 
-        self.bike_list_canvas.config(width=100 + self.bike_list_scrollbar.winfo_width(), height=300) # update the canvas size
+        self.bike_list_canvas.config(width=200 + self.bike_list_scrollbar.winfo_width(), height=300) # update the canvas size
         self.bike_list_canvas.config(scrollregion=self.bike_list_canvas.bbox("all")) # update the scroll region
+
+    ## @brief load the stations into a table
+    def load_station_list(self):
+        for widget in self.station_list.winfo_children(): # delete the frame content (refresh process)
+            widget.destroy()
+        
+        self.station_list_canvas = tk.Canvas(self.station_list) # create the canvas that will contain the scrollbar and the list
+        self.station_list_canvas.grid(row=0, column=0, sticky="nsew")
+        
+        self.station_list_scrollbar = ttk.Scrollbar(self.station_list, orient="vertical", command=self.station_list_canvas.yview) # create the scrollbar and link it to the canvas
+        self.station_list_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.station_list_canvas.configure(yscrollcommand=self.station_list_scrollbar.set)
+
+        self.stations_frame_data = tk.Frame(self.station_list_canvas) # create the frame that will contain the data
+        self.station_list_canvas.create_window((0, 0), window=self.stations_frame_data, anchor='nw')
+
+        ttk.Label(self.stations_frame_data, text="Station name").grid(row=0, column=0) #create the headers
+        ttk.Label(self.stations_frame_data, text="Battery Left").grid(row=0, column=1)
+
+        # seed the list with the bikes' info
+        index = 1
+        for station in self.stations_db["stations"]:
+            ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=0)
+            ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=1)
+            index += 1
+
+        self.stations_frame_data.update_idletasks()  # update geometry of the frame
+
+        self.station_list_canvas.config(width=200 + self.station_list_scrollbar.winfo_width(), height=300) # update the canvas size
+        self.station_list_canvas.config(scrollregion=self.station_list_canvas.bbox("all")) # update the scroll region
+
+    ## @brief display the add bike window
+    def add_bike_window(self):
+        if self.stations_db["stations"] == []: # block if there is no station in the database
+            tk.messagebox.showinfo("Error", "You need to add a station before adding a bike.")
+            return
+
+        toplevel = Toplevel()
+        toplevel.title("Add a new bike")
+        toplevel.geometry("300x115")
+
+        # defining the variables that will be used in the window
+        bike_id = str(uuid4()) #generate a new unique id using the uuid library
+        self.bikes_db["last_bike_number"] = self.bikes_db["last_bike_number"] + 1 # update the last bike number
+        bike_number = str(self.bikes_db["last_bike_number"])
+
+        # variables that will be used for the dropdown menu
+        station_list = []
+        for station in self.stations_db["stations"]:
+            station_list.append(station["name"])
+        selected_station = tk.StringVar(toplevel)
+        selected_station.set(station_list[0]) # default value
+
+        # variable that will be used for the Entry widget
+        battery_level = tk.StringVar(toplevel)
+        battery_level.set("100")
+
+        # creating the widgets
+        ttk.Label(toplevel, text="Bike n°").grid(row=0, column=0, padx=10, pady=3)
+        ttk.Label(toplevel, text="Battery level").grid(row=1, column=0, padx=10, pady=3)
+        ttk.Label(toplevel, text="Station").grid(row=2, column=0, padx=10, pady=3)
+
+        ttk.Label(toplevel, text=bike_number).grid(row=0, column=1, padx=10, pady=3)
+        ttk.Entry(toplevel, textvariable=battery_level).grid(row=1, column=1, padx=10, pady=3)
+        ttk.OptionMenu(toplevel, selected_station, station_list[0], *station_list).grid(row=2, column=1, padx=10, pady=3) # dropdown menu, updating selected_station
+
+        toplevel.rowconfigure(3, weight=3)
+        toplevel.columnconfigure(0, weight=1)
+        toplevel.columnconfigure(1, weight=2)
+        ttk.Button(toplevel, text="Confirm", command=lambda: confirm()).grid(row=3, column=0, pady=3) # add the bike and close the window
+        
+        # @brief check the entry format, and add the bike if it's correct then close the window if the format is correct
+        def confirm():
+            if not battery_level.get().isnumeric(): # check if the battery level is a number
+                tk.messagebox.showinfo("Error", "The battery level must be a number.")
+                return
+            
+            if  0 <= int(battery_level.get()) <= 100: # check if the battery level is between 0 and 100
+                self.add_bike(bike_id, bike_number, int(battery_level.get()), selected_station.get())
+                toplevel.destroy()
+            else:
+                tk.messagebox.showinfo("Error", "The battery level must be between 0 and 100.")
+                return
+
+        toplevel.mainloop()
+
+    ## @brief add a new bike to the database
+    def add_bike(self, bike_id, bike_number, battery_level, station_name):
+
+        # get the id of the station from the name
+        station_id = None
+        for station in self.stations_db["stations"]:
+            if station["name"] == station_name:
+                station_id = station["id"]
+                break
+        
+        if station_id == None: # if the station doesn't exist (should not happen)
+            tk.messagebox.showinfo("Error", "Something bad has happened, seems like the station doesn't exist anymore.")
+            print(f"ERROR: station with name {station_name} doesn't exist anymore")
+            return
+        
+        self.bikes_db["bikes"].append({"id": bike_id, "number": bike_number, "battery_level": battery_level, "station_id": station_id}) # add the bike to the database
+        self.load_bike_list() # refresh the bike list
 
     ## @brief load the application in the user mode
     def load_user_widgets(self):
@@ -150,7 +263,8 @@ class App(tk.Tk):
                     print(result)
 
                     if self.administrator_mode == "Administrator": # refresh the bike list
-                        self.load_bike_list(self.bike_list)
+                        self.load_bike_list()
+                        self.load_station_list()
                     
                 else: # file not generated by the program
                     showinfo("Wrong file selected", "This file holds incompatible data with the database you selected. Please make sure you are trying to import the right file.")
@@ -159,9 +273,9 @@ class App(tk.Tk):
         except json.decoder.JSONDecodeError: # no data / corrupted data in the JSON file
             showinfo("Incompatible file", "Please provide a JSON file generated with this software")
             pass
-        # except AttributeError: no file selected
-        #     print("No file provided")
-        #     pass
+        except AttributeError: # no file selected
+            print("No file provided")
+            pass
         
     ## @brief export the data to a JSON file
     def export_action(self, file_name, data):
