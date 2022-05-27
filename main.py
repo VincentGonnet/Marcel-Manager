@@ -266,10 +266,15 @@ class App(tk.Tk):
             return
         
         self.bikes_db["bikes"].append({"id": bike_id, "number": bike_number, "battery_level": battery_level, "station_id": station_id}) # add the bike to the database
+        
+        for station in self.stations_db["stations"]:
+            if station["id"] == station_id:
+                station["docked_bikes"].append(bike_id) # add the bike to the station
+        
         self.load_bike_list() # refresh the bike list
 
     def add_station(self, station_id, station_name, station_x, station_y):
-        self.stations_db["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database
+        self.stations_db["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database       
         self.load_station_list() # refresh the station list
 
     ## @brief load the application in the user mode
