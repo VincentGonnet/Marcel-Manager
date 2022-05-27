@@ -86,7 +86,7 @@ class App(tk.Tk):
         self.load_station_list()
 
         ttk.Button(self, text="Add bike", command=self.add_bike_window).grid(row=2, column=0, padx=10, pady=3, sticky="w")
-        ttk.Button(self, text="Add station", command=self.add_bike_window).grid(row=2, column=1, padx=10, pady=3, sticky="w")
+        ttk.Button(self, text="Add station", command=self.add_station_window).grid(row=2, column=1, padx=10, pady=3, sticky="w")
 
     ## @brief load the bikes into a table
     def load_bike_list(self):
@@ -203,6 +203,53 @@ class App(tk.Tk):
 
         toplevel.mainloop()
 
+    ## @brief display the add station window
+    def add_station_window(self):
+
+        toplevel = Toplevel()
+        toplevel.title("Add a new station")
+        toplevel.geometry("300x115")
+
+        # defining the variables that will be used in the window
+        station_id = str(uuid4()) #generate a new unique id using the uuid library
+
+        # variable that will be used by the Entry widgets
+        station_name = tk.StringVar(toplevel)
+        station_name.set("")
+        station_x = tk.StringVar(toplevel)
+        station_x.set("")
+        station_y = tk.StringVar(toplevel)
+        station_y.set("")
+
+        # creating the widgets
+        ttk.Label(toplevel, text="Station name").grid(row=0, column=0, padx=10, pady=3)
+        ttk.Label(toplevel, text="X coordinate").grid(row=1, column=0, padx=10, pady=3)
+        ttk.Label(toplevel, text="Y coordinate").grid(row=2, column=0, padx=10, pady=3)
+
+        ttk.Entry(toplevel, textvariable=station_name).grid(row=0, column=1, padx=10, pady=3)
+        ttk.Entry(toplevel, textvariable=station_x).grid(row=1, column=1, padx=10, pady=3)
+        ttk.Entry(toplevel, textvariable=station_y).grid(row=2, column=1, padx=10, pady=3)
+
+        toplevel.rowconfigure(3, weight=3)
+        toplevel.columnconfigure(0, weight=1)
+        toplevel.columnconfigure(1, weight=2)
+        ttk.Button(toplevel, text="Confirm", command=lambda: confirm()).grid(row=3, column=0, pady=3) # add the station and close the window
+        
+        # @brief check the entry format, and add the station if it's correct then close the window if the format is correct
+        def confirm():
+            if station_name.get() == "" : # check if a name has been entered
+                tk.messagebox.showinfo("Error", "Please enter a name for the station")
+                return
+            
+            try:
+                self.add_station(station_id, station_name.get(), int(station_x.get()), int(station_y.get()))
+                toplevel.destroy()
+            except ValueError:
+                tk.messagebox.showinfo("Error", "The coordinates must be integers.")
+                return
+
+        toplevel.mainloop()
+
     ## @brief add a new bike to the database
     def add_bike(self, bike_id, bike_number, battery_level, station_name):
 
@@ -220,6 +267,10 @@ class App(tk.Tk):
         
         self.bikes_db["bikes"].append({"id": bike_id, "number": bike_number, "battery_level": battery_level, "station_id": station_id}) # add the bike to the database
         self.load_bike_list() # refresh the bike list
+
+    def add_station(self, station_id, station_name, station_x, station_y):
+        self.stations_db["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database
+        self.load_station_list() # refresh the station list
 
     ## @brief load the application in the user mode
     def load_user_widgets(self):
