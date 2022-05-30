@@ -108,18 +108,27 @@ class App(tk.Tk):
         self.bike_list_canvas.create_window((0, 0), window=self.bikes_frame_data, anchor='nw')
 
         ttk.Label(self.bikes_frame_data, text="Bike n°").grid(row=0, column=0) #create the headers
-        ttk.Label(self.bikes_frame_data, text="Battery Left").grid(row=0, column=1)
+        ttk.Label(self.bikes_frame_data, text="Battery").grid(row=0, column=1)
         ttk.Label(self.bikes_frame_data, text="Station").grid(row=0, column=2)
 
         # seed the list with the bikes' info
         index = 1
         for bike in self.bikes_db["bikes"]:
-            ttk.Label(self.bikes_frame_data, text=bike["number"]).grid(row=index, column=0)
-            ttk.Label(self.bikes_frame_data, text=bike["battery_level"]).grid(row=index, column=1)
+            ttk.Label(self.bikes_frame_data, text=bike["number"]).grid(row=index, column=0) # bike number
+            ttk.Label(self.bikes_frame_data, text=bike["battery_level"]).grid(row=index, column=1) # bike battery
+
+            # station name
+            station_found = False
             for station in self.stations_db["stations"]:
                 if station["id"] == bike["station_id"]:
                     ttk.Label(self.bikes_frame_data, text=station["name"]).grid(row=index, column=2)
-            tk.Button(self.bikes_frame_data, text="", image=self.pin_image, command=lambda: self.change_bike_station_window(bike)).grid(row=index, column=3, padx=5)
+                    station_found = True
+                    break
+            if not station_found:
+                ttk.Label(self.bikes_frame_data, text="Unknown").grid(row=index, column=2)
+
+            tk.Button(self.bikes_frame_data, text="", image=self.pin_image, command=lambda: self.change_bike_station_window(bike)).grid(row=index, column=3, padx=5) # change location
+            
             index += 1
 
         self.bikes_frame_data.update_idletasks()  # update geometry of the frame
@@ -131,7 +140,7 @@ class App(tk.Tk):
     def change_bike_station_window(self, bike):
         toplevel = Toplevel() # create the toplevel window
         toplevel.title = ""
-        toplevel.geometry("200x100")
+        toplevel.geometry("200x70")
         toplevel.resizable(False, False)
         toplevel.rowconfigure(3, weight=3)
         toplevel.columnconfigure(0, weight=1)
@@ -176,7 +185,7 @@ class App(tk.Tk):
         self.station_list_canvas.create_window((0, 0), window=self.stations_frame_data, anchor='nw')
 
         ttk.Label(self.stations_frame_data, text="Station name").grid(row=0, column=0) #create the headers
-        ttk.Label(self.stations_frame_data, text="Battery Left").grid(row=0, column=1)
+        ttk.Label(self.stations_frame_data, text="Battery Left").grid(row=0, column=1) # TODO: Change to number of docked bikes
 
         # seed the list with the bikes' info
         index = 1
