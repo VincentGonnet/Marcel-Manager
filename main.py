@@ -28,6 +28,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter.messagebox import showinfo
 import tkinter as tk
+from PIL import Image, ImageTk
 import json
 from uuid import uuid4
 
@@ -51,6 +52,9 @@ class App(tk.Tk):
         self.usermode_button_foreground = "red"
         self.bikes_db = {"file_check": "bikes123", "bikes": [], "last_bike_number": 0}
         self.stations_db = {"file_check": "stations123", "stations": []}
+        img = Image.open("pin.png")
+        img = img.resize((10, 10), Image.ANTIALIAS)
+        self.pin_image = ImageTk.PhotoImage(img)
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
@@ -105,18 +109,56 @@ class App(tk.Tk):
 
         ttk.Label(self.bikes_frame_data, text="Bike n°").grid(row=0, column=0) #create the headers
         ttk.Label(self.bikes_frame_data, text="Battery Left").grid(row=0, column=1)
+        ttk.Label(self.bikes_frame_data, text="Station").grid(row=0, column=2)
 
         # seed the list with the bikes' info
         index = 1
         for bike in self.bikes_db["bikes"]:
             ttk.Label(self.bikes_frame_data, text=bike["number"]).grid(row=index, column=0)
             ttk.Label(self.bikes_frame_data, text=bike["battery_level"]).grid(row=index, column=1)
+            for station in self.stations_db["stations"]:
+                if station["id"] == bike["station_id"]:
+                    ttk.Label(self.bikes_frame_data, text=station["name"]).grid(row=index, column=2)
+            tk.Button(self.bikes_frame_data, text="", image=self.pin_image, command=lambda: self.change_bike_station_window(bike)).grid(row=index, column=3, padx=5)
             index += 1
 
         self.bikes_frame_data.update_idletasks()  # update geometry of the frame
 
         self.bike_list_canvas.config(width=200 + self.bike_list_scrollbar.winfo_width(), height=300) # update the canvas size
         self.bike_list_canvas.config(scrollregion=self.bike_list_canvas.bbox("all")) # update the scroll region
+
+    ## @brief move a bike to another station (admin mode)
+    def change_bike_station_window(self, bike):
+        toplevel = Toplevel() # create the toplevel window
+        toplevel.title = ""
+        toplevel.geometry("200x100")
+        toplevel.resizable(False, False)
+        toplevel.rowconfigure(3, weight=3)
+        toplevel.columnconfigure(0, weight=1)
+        toplevel.columnconfigure(1, weight=2)
+
+        ttk.Label(toplevel, text="Move bike to").grid(row=0, column=0)
+
+
+        # variables that will be used for the dropdown menu
+        station_list = []
+        for station in self.stations_db["stations"]:
+            station_list.append(station["name"])
+        selected_station = tk.StringVar(toplevel)
+        selected_station.set(station_list[0]) # default value
+
+        ttk.OptionMenu(toplevel, selected_station, station_list[0], *station_list).grid(row=0, column=1, padx=10, pady=3) # dropdown menu, updating selected_station
+        ttk.Button(toplevel, text="Confirm", command=lambda: confirm()).grid(row=1, column=0, pady=3)
+
+        def confirm(): # update the database
+            index = self.bikes_db["bikes"].index(bike)
+            for station in self.stations_db["stations"]:
+                if station["name"] == selected_station.get():
+                    self.bikes_db["bikes"][index]["station_id"] = station["id"]
+            toplevel.destroy() #close the toplevel window
+            self.load_bike_list() # refresh the bike list
+
+        toplevel.mainloop()
 
     ## @brief load the stations into a table
     def load_station_list(self):
@@ -157,6 +199,7 @@ class App(tk.Tk):
         toplevel = Toplevel()
         toplevel.title("Add a new bike")
         toplevel.geometry("300x115")
+        toplevel.resizable(False, False)
 
         # defining the variables that will be used in the window
         bike_id = str(uuid4()) #generate a new unique id using the uuid library
@@ -209,6 +252,7 @@ class App(tk.Tk):
         toplevel = Toplevel()
         toplevel.title("Add a new station")
         toplevel.geometry("300x115")
+        toplevel.resizable(False, False)
 
         # defining the variables that will be used in the window
         station_id = str(uuid4()) #generate a new unique id using the uuid library
