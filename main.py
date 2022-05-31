@@ -160,28 +160,40 @@ class App(tk.Tk):
         ttk.Button(toplevel, text="Confirm", command=lambda: confirm()).grid(row=1, column=0, pady=3)
 
         def confirm(): # update the database
-            index = self.bikes_db["bikes"].index(bike)
-
-            # change the station id in bike data
+            
+            the_station = NONE
             for station in self.stations_db["stations"]:
                 if station["name"] == selected_station.get():
-                    self.bikes_db["bikes"][index]["station_id"] = station["id"]
+                    the_station = station
+                    break
 
-            # remove the bike from the previous station db
-            for station in self.stations_db["stations"]:
-                if bike["id"] in station["docked_bikes"]:
-                    station["docked_bikes"].remove(bike["id"])
-
-            # add the bike to the new station db
-            for station in self.stations_db["stations"]:
-                if station["name"] == selected_station.get():
-                    station["docked_bikes"].append(bike["id"])
+            if the_station != NONE:
+                self.move_bike(bike, the_station)
             
             toplevel.destroy() #close the toplevel window
             self.load_bike_list() # refresh the bike list
             self.load_station_list() # refresh the station list
 
         toplevel.mainloop()
+
+    ## @brief move a bike to another station
+    def move_bike(self, bike, new_station):
+
+        index = self.bikes_db["bikes"].index(bike)
+
+        # change the station id in bike database
+        self.bikes_db["bikes"][index]["station_id"] = new_station["id"]
+
+        # remove the bike from the previous station db
+        for station in self.stations_db["stations"]:
+            if bike["id"] in station["docked_bikes"]:
+                station["docked_bikes"].remove(bike["id"])
+
+        # add the bike to the new station db
+        for station in self.stations_db["stations"]:
+            if station["name"] == new_station["name"]:
+                station["docked_bikes"].append(bike["id"])
+
 
     ## @brief load the stations into a table
     def load_station_list(self):
