@@ -22,7 +22,6 @@
 # @date 2022/05/10
 
 ## @brief importation of the libraries
-from cmath import exp
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
@@ -52,7 +51,7 @@ class App(tk.Tk):
         self.usermode_button_foreground = "red"
         self.bikes_db = {"file_check": "bikes123", "bikes": [], "last_bike_number": 0}
         self.stations_db = {"file_check": "stations123", "stations": []}
-        img = Image.open("pin.png")
+        img = Image.open("img/pin.png")
         img = img.resize((10, 10), Image.ANTIALIAS)
         self.pin_image = ImageTk.PhotoImage(img)
 
@@ -193,7 +192,6 @@ class App(tk.Tk):
         for station in self.stations_db["stations"]:
             if station["name"] == new_station["name"]:
                 station["docked_bikes"].append(bike["id"])
-
 
     ## @brief load the stations into a table
     def load_station_list(self):
@@ -393,10 +391,12 @@ class App(tk.Tk):
             try:
                 if excepted_db == result["file_check"]: # checking if the file is the correct one
                     if excepted_db == "bikes123": # saving the data in the right variable
-                        self.bikes_db = result
+                        if self.stations_db["stations"] != []:
+                            self.bikes_db = result
+                        else:
+                            showinfo("Error", "The station database is empty, please add a station first.")
                     else:
                         self.stations_db = result
-                    print(result)
 
                     if self.administrator_mode == "Administrator": # refresh the bike list
                         self.load_bike_list()
