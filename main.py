@@ -355,6 +355,15 @@ class App(tk.Tk):
         self.stations_db["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database       
         self.load_station_list() # refresh the station list
 
+    def remove_bike(self, bike_id):
+        for station in self.stations_db["stations"]:
+            if bike_id in station["docked_bikes"]:
+                station["docked_bikes"].remove(bike_id) # remove the bike from the stations
+        
+        for bike in self.bikes_db["bikes"]:
+            if bike["id"] == bike_id:
+                self.bikes_db["bikes"].remove(bike) # remove the bike from the database
+
     ## @brief load the application in the user mode
     def load_user_widgets(self):
         for widget in self.winfo_children(): # clear the application (reload process)
