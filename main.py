@@ -52,8 +52,11 @@ class App(tk.Tk):
         self.bikes_db = {"file_check": "bikes123", "bikes": [], "last_bike_number": 0}
         self.stations_db = {"file_check": "stations123", "stations": []}
         img = Image.open("img/pin.png")
-        img = img.resize((10, 10), Image.ANTIALIAS)
+        img = img.resize((10, 10), Image.LANCZOS)
         self.pin_image = ImageTk.PhotoImage(img)
+        img = Image.open("img/bin.png")
+        img = img.resize((10,10), Image.LANCZOS)
+        self.bin_image = ImageTk.PhotoImage(img)
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
@@ -127,7 +130,9 @@ class App(tk.Tk):
                 ttk.Label(self.bikes_frame_data, text="Unknown").grid(row=index, column=2)
 
             tk.Button(self.bikes_frame_data, text="", image=self.pin_image, command=lambda: self.change_bike_station_window(bike)).grid(row=index, column=3, padx=5) # change location
+            tk.Button(self.bikes_frame_data, text="", image=self.bin_image, command=lambda: [self.remove_bike(bike["id"]), self.load_bike_list(), self.load_station_list()]).grid(row=index, column=4, padx=5) # remove the bike
             
+
             index += 1
 
         self.bikes_frame_data.update_idletasks()  # update geometry of the frame
@@ -387,6 +392,7 @@ class App(tk.Tk):
             self.usermode_button_foreground = "black"
             self.load_user_widgets()
 
+    # TODO: compatibility check : is the bike in bike_list ?
     ## @brief importation of the data from a JSON file
     def import_action(self, excepted_db):
         file  = filedialog.askopenfile(
