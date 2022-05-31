@@ -161,11 +161,25 @@ class App(tk.Tk):
 
         def confirm(): # update the database
             index = self.bikes_db["bikes"].index(bike)
+
+            # change the station id in bike data
             for station in self.stations_db["stations"]:
                 if station["name"] == selected_station.get():
                     self.bikes_db["bikes"][index]["station_id"] = station["id"]
+
+            # remove the bike from the previous station db
+            for station in self.stations_db["stations"]:
+                if bike["id"] in station["docked_bikes"]:
+                    station["docked_bikes"].remove(bike["id"])
+
+            # add the bike to the new station db
+            for station in self.stations_db["stations"]:
+                if station["name"] == selected_station.get():
+                    station["docked_bikes"].append(bike["id"])
+            
             toplevel.destroy() #close the toplevel window
             self.load_bike_list() # refresh the bike list
+            self.load_station_list() # refresh the station list
 
         toplevel.mainloop()
 
@@ -185,13 +199,13 @@ class App(tk.Tk):
         self.station_list_canvas.create_window((0, 0), window=self.stations_frame_data, anchor='nw')
 
         ttk.Label(self.stations_frame_data, text="Station name").grid(row=0, column=0) #create the headers
-        ttk.Label(self.stations_frame_data, text="Battery Left").grid(row=0, column=1) # TODO: Change to number of docked bikes
+        ttk.Label(self.stations_frame_data, text="Docked bikes").grid(row=0, column=1)
 
         # seed the list with the bikes' info
         index = 1
         for station in self.stations_db["stations"]:
             ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=0)
-            ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=1)
+            ttk.Label(self.stations_frame_data, text=str(len(station["docked_bikes"]))).grid(row=index, column=1)
             index += 1
 
         self.stations_frame_data.update_idletasks()  # update geometry of the frame
@@ -325,6 +339,7 @@ class App(tk.Tk):
                 station["docked_bikes"].append(bike_id) # add the bike to the station
         
         self.load_bike_list() # refresh the bike list
+        self.load_station_list() # refresh the station list (to update the docked_bikes list)
 
     def add_station(self, station_id, station_name, station_x, station_y):
         self.stations_db["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database       
