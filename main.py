@@ -49,8 +49,7 @@ class App(tk.Tk):
     def init_variables(self):
         self.administrator_mode = "Administrator"
         self.usermode_button_foreground = "red"
-        self.bikes_db = {"file_check": "bikes123", "bikes": [], "last_bike_number": 0}
-        self.stations_db = {"file_check": "stations123", "stations": []}
+        self.data = {"file_check": "data_marcel_manager", "bikes": [], "stations": [], "last_bike_number": 0}
         img = Image.open("img/pin.png")
         img = img.resize((10, 10), Image.LANCZOS)
         self.pin_image = ImageTk.PhotoImage(img)
@@ -65,10 +64,8 @@ class App(tk.Tk):
 
         self.usermode_button_frame = ttk.Frame(self)
         self.usermode_button_frame.grid(row=0, column=0, padx=10, sticky="w") 
-        tk.Button(self.usermode_button_frame, text="Import Bikes DB", width=15, command= lambda: self.import_action("bikes123")).grid(row=0, column=0)
-        tk.Button(self.usermode_button_frame, text="Import Stations DB", width=15, command= lambda:  self.import_action("stations123")).grid(row=1, column=0)
-        tk.Button(self.usermode_button_frame, text="Export Bikes DB", width=15, command= lambda: self.export_action("bikesDB", self.bikes_db)).grid(row=0, column=1)
-        tk.Button(self.usermode_button_frame, text="Export Stations DB", width=15, command= lambda:  self.export_action("stationsDB", self.stations_db)).grid(row=1, column=1)
+        tk.Button(self.usermode_button_frame, text="Import Data", width=15, command= lambda: self.import_action("data_marcel_manager")).grid(row=0, column=0)
+        tk.Button(self.usermode_button_frame, text="Export Data", width=15, command= lambda: self.export_action("data", self.data)).grid(row=0, column=1)
 
         self.import_export_frame = ttk.Frame(self)
         self.import_export_frame.grid(row=0, column=1, padx=10, sticky="e")
@@ -115,13 +112,13 @@ class App(tk.Tk):
 
         # seed the list with the bikes' info
         index = 1
-        for bike in self.bikes_db["bikes"]:
+        for bike in self.data["bikes"]:
             ttk.Label(self.bikes_frame_data, text=bike["number"]).grid(row=index, column=0) # bike number
             ttk.Label(self.bikes_frame_data, text=bike["battery_level"]).grid(row=index, column=1) # bike battery
 
             # station name
             station_found = False
-            for station in self.stations_db["stations"]:
+            for station in self.data["stations"]:
                 if station["id"] == bike["station_id"]:
                     ttk.Label(self.bikes_frame_data, text=station["name"]).grid(row=index, column=2)
                     station_found = True
@@ -155,7 +152,7 @@ class App(tk.Tk):
 
         # variables that will be used for the dropdown menu
         station_list = []
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             station_list.append(station["name"])
         selected_station = tk.StringVar(toplevel)
         selected_station.set(station_list[0]) # default value
@@ -166,7 +163,7 @@ class App(tk.Tk):
         def confirm(): # update the database
             
             the_station = NONE
-            for station in self.stations_db["stations"]:
+            for station in self.data["stations"]:
                 if station["name"] == selected_station.get():
                     the_station = station
                     break
@@ -183,18 +180,18 @@ class App(tk.Tk):
     ## @brief move a bike to another station
     def move_bike(self, bike, new_station):
 
-        index = self.bikes_db["bikes"].index(bike)
+        index = self.data["bikes"].index(bike)
 
         # change the station id in bike database
-        self.bikes_db["bikes"][index]["station_id"] = new_station["id"]
+        self.data["bikes"][index]["station_id"] = new_station["id"]
 
         # remove the bike from the previous station db
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             if bike["id"] in station["docked_bikes"]:
                 station["docked_bikes"].remove(bike["id"])
 
         # add the bike to the new station db
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             if station["name"] == new_station["name"]:
                 station["docked_bikes"].append(bike["id"])
 
@@ -218,7 +215,7 @@ class App(tk.Tk):
 
         # seed the list with the bikes' info
         index = 1
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=0)
             ttk.Label(self.stations_frame_data, text=str(len(station["docked_bikes"]))).grid(row=index, column=1)
             index += 1
@@ -230,7 +227,7 @@ class App(tk.Tk):
 
     ## @brief display the add bike window
     def add_bike_window(self):
-        if self.stations_db["stations"] == []: # block if there is no station in the database
+        if self.data["stations"] == []: # block if there is no station in the database
             tk.messagebox.showinfo("Error", "You need to add a station before adding a bike.")
             return
 
@@ -241,12 +238,12 @@ class App(tk.Tk):
 
         # defining the variables that will be used in the window
         bike_id = str(uuid4()) #generate a new unique id using the uuid library
-        self.bikes_db["last_bike_number"] = self.bikes_db["last_bike_number"] + 1 # update the last bike number
-        bike_number = str(self.bikes_db["last_bike_number"])
+        self.data["last_bike_number"] = self.data["last_bike_number"] + 1 # update the last bike number
+        bike_number = str(self.data["last_bike_number"])
 
         # variables that will be used for the dropdown menu
         station_list = []
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             station_list.append(station["name"])
         selected_station = tk.StringVar(toplevel)
         selected_station.set(station_list[0]) # default value
@@ -337,7 +334,7 @@ class App(tk.Tk):
 
         # get the id of the station from the name
         station_id = None
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             if station["name"] == station_name:
                 station_id = station["id"]
                 break
@@ -347,9 +344,9 @@ class App(tk.Tk):
             print(f"ERROR: station with name {station_name} doesn't exist anymore")
             return
         
-        self.bikes_db["bikes"].append({"id": bike_id, "number": bike_number, "battery_level": battery_level, "station_id": station_id}) # add the bike to the database
+        self.data["bikes"].append({"id": bike_id, "number": bike_number, "battery_level": battery_level, "station_id": station_id}) # add the bike to the database
         
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             if station["id"] == station_id:
                 station["docked_bikes"].append(bike_id) # add the bike to the station
         
@@ -357,17 +354,17 @@ class App(tk.Tk):
         self.load_station_list() # refresh the station list (to update the docked_bikes list)
 
     def add_station(self, station_id, station_name, station_x, station_y):
-        self.stations_db["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database       
+        self.data["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database       
         self.load_station_list() # refresh the station list
 
     def remove_bike(self, bike_id):
-        for station in self.stations_db["stations"]:
+        for station in self.data["stations"]:
             if bike_id in station["docked_bikes"]:
                 station["docked_bikes"].remove(bike_id) # remove the bike from the stations
         
-        for bike in self.bikes_db["bikes"]:
+        for bike in self.data["bikes"]:
             if bike["id"] == bike_id:
-                self.bikes_db["bikes"].remove(bike) # remove the bike from the database
+                self.data["bikes"].remove(bike) # remove the bike from the database
 
     ## @brief load the application in the user mode
     def load_user_widgets(self):
@@ -392,7 +389,6 @@ class App(tk.Tk):
             self.usermode_button_foreground = "black"
             self.load_user_widgets()
 
-    # TODO: compatibility check : is the bike in bike_list ?
     ## @brief importation of the data from a JSON file
     def import_action(self, excepted_db):
         file  = filedialog.askopenfile(
@@ -405,13 +401,7 @@ class App(tk.Tk):
 
             try:
                 if excepted_db == result["file_check"]: # checking if the file is the correct one
-                    if excepted_db == "bikes123": # saving the data in the right variable
-                        if self.stations_db["stations"] != []:
-                            self.bikes_db = result
-                        else:
-                            showinfo("Error", "The station database is empty, please add a station first.")
-                    else:
-                        self.stations_db = result
+                    self.data = result # importing the data
 
                     if self.administrator_mode == "Administrator": # refresh the bike list
                         self.load_bike_list()
