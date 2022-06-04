@@ -27,6 +27,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter.messagebox import showinfo
 import tkinter as tk
+from turtle import st
 from PIL import Image, ImageTk
 import json
 from uuid import uuid4
@@ -59,24 +60,31 @@ class App(tk.Tk):
         img = Image.open("img/bike.png")
         img = img.resize((10,10), Image.LANCZOS)
         self.bike_image = ImageTk.PhotoImage(img)
+        self.stations_sort = 0
+        self.bikes_sort = 0
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
         for widget in self.winfo_children(): # clear the application (reload process)
             widget.destroy()
 
-        self.usermode_button_frame = ttk.Frame(self)
-        self.usermode_button_frame.grid(row=0, column=0, padx=10, sticky="w") 
-        tk.Button(self.usermode_button_frame, text="Import Data", width=15, command= lambda: self.import_action("data_marcel_manager")).grid(row=0, column=0)
-        tk.Button(self.usermode_button_frame, text="Export Data", width=15, command= lambda: self.export_action("data", self.data)).grid(row=0, column=1)
+        # import / export data
+        self.data_management_frame = ttk.Frame(self)
+        self.data_management_frame.grid(row=0, column=0, padx=10, sticky="w") 
+        tk.Button(self.data_management_frame, text="Import Data", width=15, command= lambda: self.import_action("data_marcel_manager")).grid(row=0, column=0)
+        tk.Button(self.data_management_frame, text="Export Data", width=15, command= lambda: self.export_action("data", self.data)).grid(row=0, column=1)
 
-        self.import_export_frame = ttk.Frame(self)
-        self.import_export_frame.grid(row=0, column=1, padx=10, sticky="e")
+        # summary
+        tk.Button(self, text="Summary", command=self.summary_action).grid(row=0, column=1, padx=10)
 
-        ttk.Label(self.import_export_frame, text="Current mode").grid(row=0, column=0, sticky="w")
-        self.usermode_button = tk.Button(self.import_export_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
+        # change user mode
+        self.user_mode_frame = ttk.Frame(self)
+        self.user_mode_frame.grid(row=0, column=2, padx=10, sticky="e")
+        ttk.Label(self.user_mode_frame, text="Current mode").grid(row=0, column=0, sticky="w")
+        self.usermode_button = tk.Button(self.user_mode_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
         self.usermode_button.grid(row=1, column=0)
 
+        # bike list
         self.bike_list = ttk.Frame(self, relief="ridge", borderwidth=3)
         self.bike_list.grid(row=1, column=0, padx=10, pady=3, sticky="w")
         self.bike_list.grid_rowconfigure(0, weight=1)
@@ -84,6 +92,7 @@ class App(tk.Tk):
         
         self.load_bike_list()
 
+        # station list
         self.station_list = ttk.Frame(self, relief="ridge", borderwidth=3)
         self.station_list.grid(row=1, column=1, padx=10, pady=3, sticky="w")
         self.station_list.grid_rowconfigure(0, weight=1)
@@ -91,6 +100,7 @@ class App(tk.Tk):
         
         self.load_station_list()
 
+        # add bike and station buttons
         ttk.Button(self, text="Add bike", command=self.add_bike_window).grid(row=2, column=0, padx=10, pady=3, sticky="w")
         ttk.Button(self, text="Add station", command=self.add_station_window).grid(row=2, column=1, padx=10, pady=3, sticky="w")
 
@@ -437,16 +447,185 @@ class App(tk.Tk):
                     tk.messagebox.showinfo("Error", "The station is not empty, please move all the bikes before removing the station.")
                     return
 
+    ## @brief display a window with the overall system summary
+    def summary_action(self):
+        if self.data["bikes"] == []:
+            tk.messagebox.showinfo("Error", "There are no bikes in the database. You must add some bikes before you can see the summary.")
+            return
+
+        # create the top-level window
+        summary_window = tk.Toplevel(self)
+        summary_window.title("Le Marcel Manager : Summary")
+        summary_window.geometry("700x380")
+        summary_window.resizable(False, False)
+
+        # configure the grid weights
+        summary_window.rowconfigure(0, weight=0)
+        summary_window.columnconfigure(0, weight=1)
+        summary_window.rowconfigure(1, weight=0)
+        summary_window.rowconfigure(3, weight=1)
+
+        # title frame
+        title_frame = ttk.Frame(summary_window)
+        title_frame.grid(row=0, column=0, columnspan=2,sticky="nwes")
+        title_frame.columnconfigure(0, weight=1)
+        title_frame.columnconfigure(1, weight=1)
+        tk.Button(title_frame, text="BIKES").grid(row=0, column=0, sticky="news")
+        tk.Button(title_frame, text="STATIONS").grid(row=0, column=1, sticky="news")
+
+        # row 1 : bikes number and average overall battery level
+        row_1_frame = ttk.Frame(summary_window)
+        row_1_frame.grid(row=1, column=0, columnspan=2, sticky="nwe")
+        row_1_frame.columnconfigure(0, weight=1)
+        row_1_frame.columnconfigure(1, weight=1)
+        bikes_number = len(self.data["bikes"])
+        average_overall_battery_level = 0
+        for bike in self.data["bikes"]:
+            average_overall_battery_level += bike["battery_level"]
+        average_overall_battery_level /= bikes_number
+        tk.Label(row_1_frame, text="Number of bikes : " + str(bikes_number)).grid(row=0, column=0, sticky="new")
+        tk.Label(row_1_frame, text="Average overall battery level : " + str(average_overall_battery_level)).grid(row=0, column=1, sticky="new")
+
+        # row 2 : sort selection
+        sort_selection = ttk.Frame(summary_window)
+        sort_selection.grid(row=2, column=0, columnspan=2,sticky="nwes")
+        sort_selection.columnconfigure(0, weight=1)
+        sort_selection.columnconfigure(1, weight=1)
+        sort_selection.columnconfigure(2, weight=1)
+        sort_selection.columnconfigure(3, weight=1)
+        ttk.Button(sort_selection, text="Days in use", command= lambda: [change_sort("bikes", 0), load_bike_list()]).grid(row=0, column=0, sticky="news")
+        ttk.Button(sort_selection, text="Times rented", command= lambda: [change_sort("bikes", 1), load_bike_list()]).grid(row=0, column=1, sticky="news")
+        ttk.Button(sort_selection, text="Nb Rents", command= lambda: [change_sort("stations", 0), load_station_list()]).grid(row=0, column=2, sticky="news")
+        ttk.Button(sort_selection, text="Nb Returns", command= lambda: [change_sort("stations", 1), load_station_list()]).grid(row=0, column=3, sticky="news")
+
+        # row 3 : lists
+        bike_list_frame = ttk.Frame(summary_window)
+        bike_list_frame.grid(row=3, column=0, sticky="nwes")
+        station_list_frame = ttk.Frame(summary_window)
+        station_list_frame.grid(row=3, column=1, sticky="nwes")
+
+        def change_sort(list, sort_id):
+            if list == "bikes":
+                self.bikes_sort = sort_id
+            elif list == "stations":
+                self.stations_sort = sort_id
+
+        def load_bike_list():
+            for widget in bike_list_frame.winfo_children(): # delete the frame content (refresh process)
+                widget.destroy()
+        
+            bike_list_canvas = tk.Canvas(bike_list_frame) # create the canvas that will contain the scrollbar and the list
+            bike_list_canvas.grid(row=0, column=0, sticky="nsew")
+            
+            bike_list_scrollbar = ttk.Scrollbar(bike_list_frame, orient="vertical", command=bike_list_canvas.yview) # create the scrollbar and link it to the canvas
+            bike_list_scrollbar.grid(row=0, column=1, sticky="ns")
+            bike_list_canvas.configure(yscrollcommand=bike_list_scrollbar.set)
+
+            bike_frame_data = tk.Frame(bike_list_canvas) # create the frame that will contain the data
+            bike_list_canvas.create_window((0, 0), window=bike_frame_data, anchor='nw')
+
+            ttk.Label(bike_frame_data, text="Bike n°").grid(row=0, column=0, padx=4) #create the headers
+            ttk.Label(bike_frame_data, text="Battery").grid(row=0, column=1, padx=4)
+            ttk.Label(bike_frame_data, text="Station").grid(row=0, column=2, padx=4)
+            ttk.Label(bike_frame_data, text="Days in use").grid(row=0, column=3, padx=4)
+            ttk.Label(bike_frame_data, text="Times rented").grid(row=0, column=4, padx=4)
+
+            data = self.data["bikes"]
+            if self.bikes_sort == 0:
+                data.sort(key= lambda x: x["nb_days"], reverse=True)
+            elif self.bikes_sort == 1:
+                data.sort(key= lambda x: x["nb_rents"], reverse=True)
+
+            # seed the list with the stations' info
+            index = 1
+            for bike in data:
+                for station in self.data["stations"]:
+                    if station["id"] == bike["station_id"]:
+                        station_name = station["name"]
+                        break
+                
+                ttk.Label(bike_frame_data, text=bike["number"]).grid(row=index, column=0)
+                ttk.Label(bike_frame_data, text=bike["battery_level"]).grid(row=index, column=1)
+                ttk.Label(bike_frame_data, text=station_name).grid(row=index, column=2)
+                ttk.Label(bike_frame_data, text=bike["nb_days"]).grid(row=index, column=3)
+                ttk.Label(bike_frame_data, text=bike["nb_rents"]).grid(row=index, column=4)
+
+                index += 1
+
+            bike_frame_data.update_idletasks()  # update geometry of the frame
+
+            bike_list_canvas.config(width=310 + bike_list_scrollbar.winfo_width(), height=300) # update the canvas size
+            bike_list_canvas.config(scrollregion=bike_list_canvas.bbox("all")) # update the scroll region
+
+        def load_station_list():
+            for widget in station_list_frame.winfo_children(): # delete the frame content (refresh process)
+                widget.destroy()
+        
+            station_list_canvas = tk.Canvas(station_list_frame) # create the canvas that will contain the scrollbar and the list
+            station_list_canvas.grid(row=0, column=0, sticky="nsew")
+            
+            station_list_scrollbar = ttk.Scrollbar(station_list_frame, orient="vertical", command=station_list_canvas.yview) # create the scrollbar and link it to the canvas
+            station_list_scrollbar.grid(row=0, column=1, sticky="ns")
+            station_list_canvas.configure(yscrollcommand=station_list_scrollbar.set)
+
+            stations_frame_data = tk.Frame(station_list_canvas) # create the frame that will contain the data
+            station_list_canvas.create_window((0, 0), window=stations_frame_data, anchor='nw')
+
+            ttk.Label(stations_frame_data, text="Station name").grid(row=0, column=0, padx=4) #create the headers
+            ttk.Label(stations_frame_data, text="Docked bikes").grid(row=0, column=1, padx=4)
+            ttk.Label(stations_frame_data, text="Rents").grid(row=0, column=2, padx=4)
+            ttk.Label(stations_frame_data, text="Returns").grid(row=0, column=3, padx=4)
+            ttk.Label(stations_frame_data, text="Av. battery").grid(row=0, column=4, padx=4)
+
+            data = self.data["stations"]
+            if self.stations_sort == 0:
+                data.sort(key= lambda x: x["nb_rents"], reverse=True)
+            elif self.stations_sort == 1:
+                data.sort(key= lambda x: x["nb_returns"], reverse=True)
+
+            # seed the list with the stations' info
+            index = 1
+            for station in data:
+                
+                if station["docked_bikes"] != []:
+                    av_battery = 0
+                    for bike_id in station["docked_bikes"]: # compute the av. battery of the station's bikes
+                        for bike in self.data["bikes"]:
+                            if bike["id"] == bike_id:
+                                av_battery += bike["battery_level"]
+                                break
+                    
+                    av_battery /= len(station["docked_bikes"])
+                else:
+                    av_battery = "-"
+
+                ttk.Label(stations_frame_data, text=station["name"]).grid(row=index, column=0)
+                ttk.Label(stations_frame_data, text=str(len(station["docked_bikes"]))).grid(row=index, column=1)
+                ttk.Label(stations_frame_data, text=station["nb_rents"]).grid(row=index, column=2)
+                ttk.Label(stations_frame_data, text=station["nb_returns"]).grid(row=index, column=3)
+                ttk.Label(stations_frame_data, text=str(av_battery)).grid(row=index, column=4)
+
+                index += 1
+
+            stations_frame_data.update_idletasks()  # update geometry of the frame
+
+            station_list_canvas.config(width=310 + station_list_scrollbar.winfo_width(), height=300) # update the canvas size
+            station_list_canvas.config(scrollregion=station_list_canvas.bbox("all")) # update the scroll region
+
+        load_bike_list()
+        load_station_list()
+        summary_window.mainloop()
+
     ## @brief load the application in the user mode
     def load_user_widgets(self):
         for widget in self.winfo_children(): # clear the application (reload process)
             widget.destroy()
 
-        self.import_export_frame = ttk.Frame(self)
-        self.import_export_frame.grid(row=0, column=1, padx=10, sticky="e")
+        self.user_mode_frame = ttk.Frame(self)
+        self.user_mode_frame.grid(row=0, column=1, padx=10, sticky="e")
 
-        ttk.Label(self.import_export_frame, text="Current mode").grid(row=0, column=0, sticky="w")
-        self.usermode_button = tk.Button(self.import_export_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
+        ttk.Label(self.user_mode_frame, text="Current mode").grid(row=0, column=0, sticky="w")
+        self.usermode_button = tk.Button(self.user_mode_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
         self.usermode_button.grid(row=1, column=0)
 
     ## @brief change the user mode between administrator and user, reloading the application 
