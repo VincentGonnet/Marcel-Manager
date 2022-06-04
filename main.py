@@ -27,7 +27,6 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter.messagebox import showinfo
 import tkinter as tk
-from turtle import st
 from PIL import Image, ImageTk
 import json
 from uuid import uuid4
