@@ -56,6 +56,9 @@ class App(tk.Tk):
         img = Image.open("img/bin.png")
         img = img.resize((10,10), Image.LANCZOS)
         self.bin_image = ImageTk.PhotoImage(img)
+        img = Image.open("img/bike.png")
+        img = img.resize((10,10), Image.LANCZOS)
+        self.bike_image = ImageTk.PhotoImage(img)
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
@@ -161,8 +164,8 @@ class App(tk.Tk):
             ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=0)
             ttk.Label(self.stations_frame_data, text=str(len(station["docked_bikes"]))).grid(row=index, column=1)
 
-            ttk.Button(self.stations_frame_data, text="", image=self.bin_image, command=lambda id=station["id"]: [self.remove_station(id), self.load_bike_list(), self.load_station_list()]).grid(row=index, column=2, padx=5) # remove the station
-            print("generated button for station " + station["name"])
+            ttk.Button(self.stations_frame_data, text="", image=self.bike_image, command=lambda id=station["id"]: self.display_bikes_window(id)).grid(row=index, column=2, padx=5) # display the bikes docked to the station
+            ttk.Button(self.stations_frame_data, text="", image=self.bin_image, command=lambda id=station["id"]: [self.remove_station(id), self.load_bike_list(), self.load_station_list()]).grid(row=index, column=3, padx=5) # remove the station
 
             index += 1
 
@@ -170,6 +173,38 @@ class App(tk.Tk):
 
         self.station_list_canvas.config(width=200 + self.station_list_scrollbar.winfo_width(), height=300) # update the canvas size
         self.station_list_canvas.config(scrollregion=self.station_list_canvas.bbox("all")) # update the scroll region
+
+    ## @brief display the bikes docked to a station
+    def display_bikes_window(self, station_id):
+        for station in self.data["stations"]:
+            if station["id"] == station_id:
+
+                # check if there are bikes docked to the station
+                if len(station["docked_bikes"]) == 0:
+                    tk.messagebox.showinfo("No bikes", "There are no bikes docked to this station")
+                    return
+
+                # create a top-level window with a bike list 
+                bikes_window = tk.Toplevel(self)
+                bikes_window.title("Bikes docked at " + station["name"])
+                bikes_window.geometry("300x130")
+                bikes_window.resizable(False, True)
+
+                ttk.Label(bikes_window, text="Bike n°").grid(row=0, column=0, pady=10)
+                ttk.Label(bikes_window, text="Battery level").grid(row=0, column=1, pady=10)
+
+                index = 1
+                for bike_id in station["docked_bikes"]:
+                    for bike in self.data["bikes"]:
+                        if bike["id"] == bike_id:
+                            ttk.Label(bikes_window, text=bike["number"]).grid(row=index, column=0)
+                            ttk.Label(bikes_window, text=bike["battery_level"]).grid(row=index, column=1)
+                            index += 1
+                            break
+                
+                ttk.Button(bikes_window, text="Close", command=bikes_window.destroy).grid(row=index+1, column=0, padx=50, pady=20)
+
+                bikes_window.mainloop()
 
     ## @brief display the add bike window
     def add_bike_window(self):
@@ -398,7 +433,6 @@ class App(tk.Tk):
             if station["id"] == station_id:
                 if station["docked_bikes"] == []: # check if the station is empty
                     self.data["stations"].remove(station) # remove the station from the database
-                    print("Removed station"+ station["name"])
                 else:
                     tk.messagebox.showinfo("Error", "The station is not empty, please move all the bikes before removing the station.")
                     return
