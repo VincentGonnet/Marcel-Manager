@@ -126,8 +126,8 @@ class App(tk.Tk):
             if not station_found:
                 ttk.Label(self.bikes_frame_data, text="Unknown").grid(row=index, column=2)
 
-            tk.Button(self.bikes_frame_data, text="", image=self.pin_image, command=lambda: self.change_bike_station_window(bike)).grid(row=index, column=3, padx=5) # change location
-            tk.Button(self.bikes_frame_data, text="", image=self.bin_image, command=lambda: [self.remove_bike(bike["id"]), self.load_bike_list(), self.load_station_list()]).grid(row=index, column=4, padx=5) # remove the bike
+            ttk.Button(self.bikes_frame_data, text="", image=self.pin_image, command=lambda bike=bike: self.change_bike_station_window(bike)).grid(row=index, column=3, padx=5) # change location
+            ttk.Button(self.bikes_frame_data, text="", image=self.bin_image, command=lambda id=bike["id"]: [self.remove_bike(id), self.load_bike_list(), self.load_station_list()]).grid(row=index, column=4, padx=5) # remove the bike
             
 
             index += 1
@@ -136,64 +136,6 @@ class App(tk.Tk):
 
         self.bike_list_canvas.config(width=200 + self.bike_list_scrollbar.winfo_width(), height=300) # update the canvas size
         self.bike_list_canvas.config(scrollregion=self.bike_list_canvas.bbox("all")) # update the scroll region
-
-    ## @brief move a bike to another station (admin mode)
-    def change_bike_station_window(self, bike):
-        toplevel = Toplevel() # create the toplevel window
-        toplevel.title = ""
-        toplevel.geometry("200x70")
-        toplevel.resizable(False, False)
-        toplevel.rowconfigure(3, weight=3)
-        toplevel.columnconfigure(0, weight=1)
-        toplevel.columnconfigure(1, weight=2)
-
-        ttk.Label(toplevel, text="Move bike to").grid(row=0, column=0)
-
-
-        # variables that will be used for the dropdown menu
-        station_list = []
-        for station in self.data["stations"]:
-            station_list.append(station["name"])
-        selected_station = tk.StringVar(toplevel)
-        selected_station.set(station_list[0]) # default value
-
-        ttk.OptionMenu(toplevel, selected_station, station_list[0], *station_list).grid(row=0, column=1, padx=10, pady=3) # dropdown menu, updating selected_station
-        ttk.Button(toplevel, text="Confirm", command=lambda: confirm()).grid(row=1, column=0, pady=3)
-
-        def confirm(): # update the database
-            
-            the_station = NONE
-            for station in self.data["stations"]:
-                if station["name"] == selected_station.get():
-                    the_station = station
-                    break
-
-            if the_station != NONE:
-                self.move_bike(bike, the_station)
-            
-            toplevel.destroy() #close the toplevel window
-            self.load_bike_list() # refresh the bike list
-            self.load_station_list() # refresh the station list
-
-        toplevel.mainloop()
-
-    ## @brief move a bike to another station
-    def move_bike(self, bike, new_station):
-
-        index = self.data["bikes"].index(bike)
-
-        # change the station id in bike database
-        self.data["bikes"][index]["station_id"] = new_station["id"]
-
-        # remove the bike from the previous station db
-        for station in self.data["stations"]:
-            if bike["id"] in station["docked_bikes"]:
-                station["docked_bikes"].remove(bike["id"])
-
-        # add the bike to the new station db
-        for station in self.data["stations"]:
-            if station["name"] == new_station["name"]:
-                station["docked_bikes"].append(bike["id"])
 
     ## @brief load the stations into a table
     def load_station_list(self):
@@ -213,11 +155,15 @@ class App(tk.Tk):
         ttk.Label(self.stations_frame_data, text="Station name").grid(row=0, column=0) #create the headers
         ttk.Label(self.stations_frame_data, text="Docked bikes").grid(row=0, column=1)
 
-        # seed the list with the bikes' info
+        # seed the list with the stations' info
         index = 1
         for station in self.data["stations"]:
             ttk.Label(self.stations_frame_data, text=station["name"]).grid(row=index, column=0)
             ttk.Label(self.stations_frame_data, text=str(len(station["docked_bikes"]))).grid(row=index, column=1)
+
+            ttk.Button(self.stations_frame_data, text="", image=self.bin_image, command=lambda id=station["id"]: [self.remove_station(id), self.load_bike_list(), self.load_station_list()]).grid(row=index, column=2, padx=5) # remove the station
+            print("generated button for station " + station["name"])
+
             index += 1
 
         self.stations_frame_data.update_idletasks()  # update geometry of the frame
@@ -344,7 +290,16 @@ class App(tk.Tk):
             print(f"ERROR: station with name {station_name} doesn't exist anymore")
             return
         
-        self.data["bikes"].append({"id": bike_id, "number": bike_number, "battery_level": battery_level, "station_id": station_id}) # add the bike to the database
+        self.data["bikes"].append(
+            {
+                "id": bike_id, 
+                "number": bike_number, 
+                "battery_level": battery_level, 
+                "station_id": station_id, 
+                "nb_days": 0, 
+                "nb_rents": 0
+            }
+        ) # add the bike to the database
         
         for station in self.data["stations"]:
             if station["id"] == station_id:
@@ -353,10 +308,81 @@ class App(tk.Tk):
         self.load_bike_list() # refresh the bike list
         self.load_station_list() # refresh the station list (to update the docked_bikes list)
 
+    ## @brief add a new station to the database
     def add_station(self, station_id, station_name, station_x, station_y):
-        self.data["stations"].append({"id": station_id, "name": station_name, "x": station_x, "y": station_y, "docked_bikes": []}) # add the station to the database       
+        self.data["stations"].append(
+            {
+                "id": station_id,
+                "name": station_name,
+                "x": station_x,
+                "y": station_y,
+                "docked_bikes": [],
+                "nb_rents": 0,
+                "nb_returns": 0
+            }
+        ) # add the station to the database
+
         self.load_station_list() # refresh the station list
 
+    ## @brief move a bike to another station (admin mode)
+    def change_bike_station_window(self, bike):
+        toplevel = Toplevel() # create the toplevel window
+        toplevel.title = ""
+        toplevel.geometry("200x70")
+        toplevel.resizable(False, False)
+        toplevel.rowconfigure(3, weight=3)
+        toplevel.columnconfigure(0, weight=1)
+        toplevel.columnconfigure(1, weight=2)
+
+        ttk.Label(toplevel, text="Move bike to").grid(row=0, column=0)
+
+
+        # variables that will be used for the dropdown menu
+        station_list = []
+        for station in self.data["stations"]:
+            station_list.append(station["name"])
+        selected_station = tk.StringVar(toplevel)
+        selected_station.set(station_list[0]) # default value
+
+        ttk.OptionMenu(toplevel, selected_station, station_list[0], *station_list).grid(row=0, column=1, padx=10, pady=3) # dropdown menu, updating selected_station
+        ttk.Button(toplevel, text="Confirm", command=lambda: confirm()).grid(row=1, column=0, pady=3)
+
+        def confirm(): # update the database
+            
+            the_station = NONE
+            for station in self.data["stations"]:
+                if station["name"] == selected_station.get():
+                    the_station = station
+                    break
+
+            if the_station != NONE:
+                self.move_bike(bike, the_station)
+            
+            toplevel.destroy() #close the toplevel window
+            self.load_bike_list() # refresh the bike list
+            self.load_station_list() # refresh the station list
+
+        toplevel.mainloop()
+
+    ## @brief move a bike to another station
+    def move_bike(self, bike, new_station):
+
+        index = self.data["bikes"].index(bike)
+
+        # change the station id in bike database
+        self.data["bikes"][index]["station_id"] = new_station["id"]
+
+        # remove the bike from the previous station db
+        for station in self.data["stations"]:
+            if bike["id"] in station["docked_bikes"]:
+                station["docked_bikes"].remove(bike["id"])
+
+        # add the bike to the new station db
+        for station in self.data["stations"]:
+            if station["name"] == new_station["name"]:
+                station["docked_bikes"].append(bike["id"])
+
+    ## @brief remove a bike from the database
     def remove_bike(self, bike_id):
         for station in self.data["stations"]:
             if bike_id in station["docked_bikes"]:
@@ -365,6 +391,17 @@ class App(tk.Tk):
         for bike in self.data["bikes"]:
             if bike["id"] == bike_id:
                 self.data["bikes"].remove(bike) # remove the bike from the database
+
+    ## @brief remove a station from the database
+    def remove_station(self, station_id):
+        for station in self.data["stations"]:
+            if station["id"] == station_id:
+                if station["docked_bikes"] == []: # check if the station is empty
+                    self.data["stations"].remove(station) # remove the station from the database
+                    print("Removed station"+ station["name"])
+                else:
+                    tk.messagebox.showinfo("Error", "The station is not empty, please move all the bikes before removing the station.")
+                    return
 
     ## @brief load the application in the user mode
     def load_user_widgets(self):
