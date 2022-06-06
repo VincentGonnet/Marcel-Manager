@@ -74,12 +74,21 @@ class App(tk.Tk):
         tk.Button(self.data_management_frame, text="Import Data", width=15, command= lambda: self.import_action("data_marcel_manager")).grid(row=0, column=0)
         tk.Button(self.data_management_frame, text="Export Data", width=15, command= lambda: self.export_action("data", self.data)).grid(row=0, column=1)
 
-        # summary
-        tk.Button(self, text="Summary", command=self.summary_action).grid(row=0, column=1, padx=10)
+        # summary & pass day button
+        def pass_day():
+            for bike in self.data["bikes"]:
+                bike["nb_days"] += 1
+            showinfo("Pass day", "One day has passed")
+        
+        summ_frame = ttk.Frame(self)
+        summ_frame.grid(row=0, column=1, padx=10, sticky="e")
+        summ_frame.columnconfigure(0, weight=1)
+        tk.Button(summ_frame, text="Summary", command=self.summary_action).grid(row=0, column=0, padx=20, sticky="e")
+        tk.Button(summ_frame, text="Pass day", command=pass_day).grid(row=0, column=1, sticky="e")
 
         # change user mode
         self.user_mode_frame = ttk.Frame(self)
-        self.user_mode_frame.grid(row=0, column=2, padx=10, sticky="e")
+        self.user_mode_frame.grid(row=0, column=3, padx=10, sticky="e")
         ttk.Label(self.user_mode_frame, text="Current mode").grid(row=0, column=0, sticky="w")
         self.usermode_button = tk.Button(self.user_mode_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
         self.usermode_button.grid(row=1, column=0)
@@ -676,8 +685,7 @@ class App(tk.Tk):
 
         listbox.bind("<<ListboxSelect>>", items_selected)
 
-
-    # load the bike list in the listbox
+    ## @brief load the bike list in the listbox
     def load_user_bike_list(self, station_id):
         for widget in self.user_bike_list.winfo_children(): # clear the frame (reload process)
             widget.destroy()
@@ -805,7 +813,6 @@ class App(tk.Tk):
         ttk.Button(rent_window, text="Confirm", command=confirm).grid(row=2, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
 
         rent_window.mainloop()
-
 
     ## @brief change the user mode between administrator and user, reloading the application 
     def change_user_mode(self):
