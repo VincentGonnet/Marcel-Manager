@@ -620,12 +620,103 @@ class App(tk.Tk):
         for widget in self.winfo_children(): # clear the application (reload process)
             widget.destroy()
 
-        self.user_mode_frame = ttk.Frame(self)
-        self.user_mode_frame.grid(row=0, column=1, padx=10, sticky="e")
+        # user mode widgets
+        user_mode_frame = ttk.Frame(self)
+        user_mode_frame.grid(row=0, column=1, padx=10, sticky="ne")
+        ttk.Label(user_mode_frame, text="Current mode").grid(row=0, column=0, sticky="w")
+        usermode_button = tk.Button(user_mode_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
+        usermode_button.grid(row=1, column=0)
 
-        ttk.Label(self.user_mode_frame, text="Current mode").grid(row=0, column=0, sticky="w")
-        self.usermode_button = tk.Button(self.user_mode_frame, text=self.administrator_mode, fg=self.usermode_button_foreground, width=10, command=self.change_user_mode)
-        self.usermode_button.grid(row=1, column=0)
+        # station list widgets
+        rent_frame = ttk.Frame(self)
+        rent_frame.grid(row=1, column=0, columnspan=2, padx=10, sticky="news")
+
+        rent_frame.rowconfigure(0, weight=1)
+        rent_frame.columnconfigure(0, weight=1)
+        rent_frame.columnconfigure(1, weight=2)
+
+        station_selection_frame = ttk.Frame(rent_frame)
+        station_selection_frame.grid(row=0, column=0, sticky="nsew")
+
+        station_selection_frame.columnconfigure(0, weight=1)
+
+        ttk.Label(station_selection_frame, text="Station list").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+
+        stations = []
+        for station in self.data["stations"]:
+            stations.append(station["name"])
+        
+        station_var = tk.StringVar(value=stations)
+
+        listbox =tk.Listbox(
+            station_selection_frame,
+            listvariable=station_var,
+            height=18
+        )
+        listbox.grid(row=1, column=0, padx=10, pady=5, sticky="news")
+
+        # rent a bike widgets
+        bike_list_frame = ttk.Frame(rent_frame)
+        bike_list_frame.grid(row=0, column=1, padx=5, sticky="news")
+
+        bike_list_frame.rowconfigure(1, weight=1)
+
+        ttk.Label(bike_list_frame, text="Available bikes").grid(row=0, column=0, padx=10, pady=5, sticky="news")
+
+        bike_list = tk.Frame(bike_list_frame, highlightbackground="black", highlightthickness=1)
+        bike_list.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+
+        def load_bike_list(station_id):
+            for widget in bike_list.winfo_children(): # clear the frame (reload process)
+                widget.destroy()
+
+            bike_list_canvas = tk.Canvas(bike_list) # create the canvas that will contain the scrollbar and the list
+            bike_list_canvas.grid(row=0, column=0, sticky="w")
+            
+            bike_list_scrollbar = ttk.Scrollbar(bike_list, orient="vertical", command=bike_list_canvas.yview) # create the scrollbar and link it to the canvas
+            bike_list_scrollbar.grid(row=0, column=1, sticky="ns")
+            bike_list_canvas.configure(yscrollcommand=bike_list_scrollbar.set)
+
+            bikes_frame_data = tk.Frame(bike_list_canvas) # create the frame that will contain the data
+            bike_list_canvas.create_window((0, 0), window=bikes_frame_data, anchor='nw')
+
+            ttk.Label(bikes_frame_data, text="Bike n°").grid(row=0, column=0, padx=5) #create the headers
+            ttk.Label(bikes_frame_data, text="Battery").grid(row=0, column=1, padx=5)
+
+            # seed the list with the bikes' info
+            index = 1
+            for bike in self.data["bikes"]:
+                battery_color = "black"
+                if bike["station_id"] != station_id: # if the bike is not in the selected station, skip it
+                    continue
+                if bike["battery_level"] <= 2: # if the bike is low on battery, skip it
+                    continue
+                if bike["battery_level"] <= 20: # if the bike is low on battery, change the color of the battery level
+                    battery_color = "red"
+
+                ttk.Label(bikes_frame_data, text=bike["number"]).grid(row=index, column=0) # bike number
+                tk.Label(bikes_frame_data, text=bike["battery_level"], fg=battery_color).grid(row=index, column=1) # bike battery
+
+                ttk.Button(bikes_frame_data, text="Rent").grid(row=index, column=3, padx=5) # change location
+                
+                index += 1
+
+            bikes_frame_data.update_idletasks()  # update geometry of the frame
+
+            bike_list_canvas.config(width=230 + bike_list_scrollbar.winfo_width(), height=286) # update the canvas size
+            bike_list_canvas.config(scrollregion=bike_list_canvas.bbox("all")) # update the scroll region
+
+        # handle selection
+        def items_selected(event):
+            # load the bike list for the selected station
+            station_name = stations[listbox.curselection()[0]]
+            for station in self.data["stations"]:
+                if station["name"] == station_name:
+                    load_bike_list(station["id"])
+                    break
+
+        listbox.bind("<<ListboxSelect>>", items_selected)
+
 
     ## @brief change the user mode between administrator and user, reloading the application 
     def change_user_mode(self):
