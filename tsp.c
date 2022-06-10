@@ -25,7 +25,7 @@ int resultIteration;    ///< Index of the node being added to the result array
 /** \brief Function to calculate the closest node to the current node
  * \param indexNode The current node
  */
-int least(int indexNode)
+int closest(int indexNode)
 {
     int nextNode = 999;   // by default, there is no next node
     int lowestCost = 999; // by default, there is no minimum, the value is very high so that it will be replaced by the first iteration
@@ -50,7 +50,7 @@ int least(int indexNode)
 /** \brief Recursive function that calculates the shortest path to visit all the nodes, as well as the minimum cost of the path
  * \param indexNode The current node
  */
-void mincost(int indexNode)
+void recursiveSolver(int indexNode)
 {
     int nextNode; // index of the next node to visit
 
@@ -58,7 +58,7 @@ void mincost(int indexNode)
 
     result[resultIteration++] = indexNode + 1; // add the next node id to the result array
 
-    nextNode = least(indexNode); // determine the next node to visit using the least function
+    nextNode = closest(indexNode); // determine the next node to visit using the least function
 
     if (nextNode == 999) // if there is no next node, we have visited all the nodes, so we return to the warehouse and stop the function
     {
@@ -69,7 +69,7 @@ void mincost(int indexNode)
         return; // stop the function
     }
 
-    mincost(nextNode); // call the function again with the next node
+    recursiveSolver(nextNode); // call the function again with the next node
 }
 
 /** \brief Main function : Traveling Salesman Problem (closest neighbor), will be imported in python by ctypes
@@ -108,7 +108,7 @@ int *tsp(int length, int rawNodes[])
         }
     }
 
-    mincost(0); // calling the recursive function
+    recursiveSolver(0); // calling the recursive function
 
     return result;
 }
