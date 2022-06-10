@@ -4,7 +4,6 @@ tempCodeRunnerFile.py
 
 *.json
 
-Documentation/
 doxyfile
 
 *.pdf
