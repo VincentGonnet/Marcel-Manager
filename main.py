@@ -16,12 +16,17 @@
 # @section libraries_main Libraries/Modules
 # - tkinter
 # - json
+# - pillow (PIL)
+# - networkx
+# - matplotlib
+# - uuid
+# - ctypes
 #
 # @author Vincent Gonnet
 #
 # @date 2022/05/10
 
-## @brief importation of the libraries
+# importation of the libraries
 from asyncio.windows_events import NULL
 from tkinter import *
 from tkinter import ttk
@@ -51,19 +56,28 @@ class App(tk.Tk):
 
     ## @brief initialize the variables
     def init_variables(self):
+        ## @brief Current user mode (Administrator or User)
         self.administrator_mode = "Administrator"
+        ## @brief Color of the text in the change-user-mode button
         self.usermode_button_foreground = "red"
+        ## @brief Variable that holds all the data loaded in our application
         self.data = {"file_check": "data_marcel_manager", "bikes": [], "stations": [], "last_bike_number": 0}
+        
         img = Image.open("img/pin.png")
         img = img.resize((10, 10), Image.LANCZOS)
+        ## @brief The pin image
         self.pin_image = ImageTk.PhotoImage(img)
         img = Image.open("img/bin.png")
         img = img.resize((10,10), Image.LANCZOS)
+        ## @brief The bin image
         self.bin_image = ImageTk.PhotoImage(img)
         img = Image.open("img/bike.png")
         img = img.resize((10,10), Image.LANCZOS)
+        ## @brief The bike image
         self.bike_image = ImageTk.PhotoImage(img)
+        ## @brief Station's sorting mode in the summary window (0 = by number of rents, 1 = by number of returns)
         self.stations_sort = 0
+        ## @brief Station's sorting mode in the summary window (0 = by days, 1 = by times rented)
         self.bikes_sort = 0
 
     ## @brief display the shortest path to visit all the stations
@@ -115,9 +129,9 @@ class App(tk.Tk):
             arrowsize = 15,
             arrowstyle = "-|>",
             font_color = "#8B0000"
-        )
+        ) # load the graph with all the attributes
 
-        plt.show()
+        plt.show() # display the graph
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
@@ -377,28 +391,28 @@ class App(tk.Tk):
                 tk.messagebox.showinfo("Error", "Please enter a name for the station")
                 return
             
-            try:
+            try: # check if the number is an integer
                 x = int(station_x.get())
                 y = int(station_y.get())
             except ValueError:
                 tk.messagebox.showinfo("Error", "The coordinates must be integers.")
                 return
             
-            if x == 0 and y == 0:
+            if x == 0 and y == 0: # check if the coordinates are not 0;0
                 tk.messagebox.showinfo("Error", "There is already the main warehouse at these coordinates.")
                 return
 
-            if not -100 <= x <= 100 or not -100 <= y <= 100:
+            if not -100 <= x <= 100 or not -100 <= y <= 100: # check if the coordinates are between -100 and 100
                 tk.messagebox.showinfo("Error", "The coordinates must be between -100 and 100.")
                 return
 
-            for station in self.data["stations"]:
+            for station in self.data["stations"]: # check if there is already a station at the same coordinates
                 if station["x"] == x and station["y"] == y:
                     tk.messagebox.showinfo("Error", "There is already a station at these coordinates.")
                     return
 
-            self.add_station(station_id, station_name.get(), x, y)
-            toplevel.destroy()
+            self.add_station(station_id, station_name.get(), x, y) # add the station
+            toplevel.destroy() # close the window
 
         toplevel.mainloop()
 
@@ -477,12 +491,12 @@ class App(tk.Tk):
         def confirm(): # update the database
             
             the_station = NONE
-            for station in self.data["stations"]:
+            for station in self.data["stations"]: # get the station
                 if station["name"] == selected_station.get():
                     the_station = station
                     break
 
-            if the_station != NONE:
+            if the_station != NONE: # if the station exists, move the bike
                 self.move_bike(bike, the_station)
             
             toplevel.destroy() #close the toplevel window
@@ -494,7 +508,7 @@ class App(tk.Tk):
     ## @brief move a bike to another station
     def move_bike(self, bike, new_station):
 
-        index = self.data["bikes"].index(bike)
+        index = self.data["bikes"].index(bike) # get the index of the bike in the database
 
         # change the station id in bike database
         self.data["bikes"][index]["station_id"] = new_station["id"]

@@ -2,7 +2,7 @@
 *.code-workspace
 tempCodeRunnerFile.py
 
-data/
+*.json
 
 Documentation/
 doxyfile
