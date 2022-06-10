@@ -65,20 +65,19 @@ class App(tk.Tk):
         self.bike_image = ImageTk.PhotoImage(img)
         self.stations_sort = 0
         self.bikes_sort = 0
-        self.maintenance_function = CDLL('./main.o')
 
     ## @brief display the shortest path to visit all the stations
     def maintenance(self):
-        fc = CDLL('./main.o') # load the library
-        fc.lists.argtypes = (c_int, POINTER(c_int)) # set the arguments' type of the function
-        fc.lists.restype = POINTER(c_int) # set the return type of the function
+        fc = CDLL('./tsp.o') # load the library
+        fc.tsp.argtypes = (c_int, POINTER(c_int)) # set the arguments' type of the function
+        fc.tsp.restype = POINTER(c_int) # set the return type of the function
         list = [0, 0] # create the list containing the stations' coordinates (x, y), the first element is the start station (warehouse)
         for station in self.data["stations"]:
             list.append(station["x"])
             list.append(station["y"])
         length = len(list)
         args = c_int * length
-        result_list = fc.lists(length, args(*list)) # call the function and store the result
+        result_list = fc.tsp(length, args(*list)) # call the function and store the result
 
         ordered_stations = [] # list of stations by visit order
         for i in range(0, int(length/2)):
