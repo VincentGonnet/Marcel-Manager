@@ -22,7 +22,6 @@
 # @date 2022/05/10
 
 ## @brief importation of the libraries
-from array import array
 from asyncio.windows_events import NULL
 from tkinter import *
 from tkinter import ttk
@@ -33,6 +32,8 @@ from PIL import Image, ImageTk
 import json
 from uuid import uuid4
 from ctypes import *
+import networkx as nx
+import matplotlib.pyplot as plt
 
 class App(tk.Tk):
 
@@ -68,24 +69,56 @@ class App(tk.Tk):
 
     ## @brief display the shortest path to visit all the stations
     def maintenance(self):
-        fc = CDLL('./main.o')
-        fc.lists.argtypes = (c_int, POINTER(c_int))
-        fc.lists.restype = POINTER(c_int)
-        list = [0, 0]
+        fc = CDLL('./main.o') # load the library
+        fc.lists.argtypes = (c_int, POINTER(c_int)) # set the arguments' type of the function
+        fc.lists.restype = POINTER(c_int) # set the return type of the function
+        list = [0, 0] # create the list containing the stations' coordinates (x, y), the first element is the start station (warehouse)
         for station in self.data["stations"]:
             list.append(station["x"])
             list.append(station["y"])
         length = len(list)
         args = c_int * length
-        result_list = fc.lists(length, args(*list))
+        result_list = fc.lists(length, args(*list)) # call the function and store the result
 
-        ordered_stations = []
-
+        ordered_stations = [] # list of stations by visit order
         for i in range(0, int(length/2)):
             if result_list[i]-2 >= 0:
                 ordered_stations.append(self.data["stations"][result_list[i]-2]["name"])
         
-        print(ordered_stations)
+        G = nx.Graph() # instantiate a graph
+    
+        # create and seed a node list with the stations' name and coordinates
+        nodes = [("Warehouse", {"coords": (0, 0)})]
+        for station in ordered_stations:
+            for station_data in self.data["stations"]:
+                if station_data["name"] == station:
+                    nodes.append((station_data["name"], {"coords": (station_data["x"], station_data["y"])}))
+                    break
+        G.add_nodes_from(nodes) # add the nodes to the graph
+
+        # create and seed an edge list
+        edges = [("Warehouse", ordered_stations[0])]
+        for i in range(0, len(ordered_stations)-1):
+            edges.append((ordered_stations[i], ordered_stations[i+1]))
+        G.add_edges_from(edges) # add the edges to the graph
+
+        coords = nx.get_node_attributes(G, "coords") # get the coordinates of the nodes
+
+        nx.draw(
+            G,
+            pos = coords,
+            with_labels = True,
+            font_weight = 'bold',
+            node_size = 400,
+            node_color = '#e3fafb',
+            edge_color = '#8c8d8d',
+            arrows = True,
+            arrowsize = 15,
+            arrowstyle = "-|>",
+            font_color = "#8B0000"
+        )
+
+        plt.show()
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
