@@ -22,6 +22,7 @@
 # @date 2022/05/10
 
 ## @brief importation of the libraries
+from array import array
 from asyncio.windows_events import NULL
 from tkinter import *
 from tkinter import ttk
@@ -31,6 +32,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import json
 from uuid import uuid4
+from ctypes import *
 
 class App(tk.Tk):
 
@@ -62,6 +64,28 @@ class App(tk.Tk):
         self.bike_image = ImageTk.PhotoImage(img)
         self.stations_sort = 0
         self.bikes_sort = 0
+        self.maintenance_function = CDLL('./main.o')
+
+    ## @brief display the shortest path to visit all the stations
+    def maintenance(self):
+        fc = CDLL('./main.o')
+        fc.lists.argtypes = (c_int, POINTER(c_int))
+        fc.lists.restype = POINTER(c_int)
+        list = [0, 0]
+        for station in self.data["stations"]:
+            list.append(station["x"])
+            list.append(station["y"])
+        length = len(list)
+        args = c_int * length
+        result_list = fc.lists(length, args(*list))
+
+        ordered_stations = []
+
+        for i in range(0, int(length/2)):
+            if result_list[i]-2 >= 0:
+                ordered_stations.append(self.data["stations"][result_list[i]-2]["name"])
+        
+        print(ordered_stations)
 
     ## @brief load the application in the administrator mode
     def load_admin_widgets(self):
@@ -83,8 +107,9 @@ class App(tk.Tk):
         summ_frame = ttk.Frame(self)
         summ_frame.grid(row=0, column=1, padx=10, sticky="e")
         summ_frame.columnconfigure(0, weight=1)
-        tk.Button(summ_frame, text="Summary", command=self.summary_action).grid(row=0, column=0, padx=20, sticky="e")
-        tk.Button(summ_frame, text="Pass day", command=pass_day).grid(row=0, column=1, sticky="e")
+        tk.Button(summ_frame, text="Summary", command=self.summary_action).grid(row=0, column=0, padx=0, sticky="e")
+        tk.Button(summ_frame, text="Maintenance", command=self.maintenance).grid(row=0, column=1, padx=10, sticky="e")
+        tk.Button(summ_frame, text="Pass day", command=pass_day).grid(row=0, column=2, sticky="e")
 
         # change user mode
         self.user_mode_frame = ttk.Frame(self)
@@ -321,11 +346,27 @@ class App(tk.Tk):
                 return
             
             try:
-                self.add_station(station_id, station_name.get(), int(station_x.get()), int(station_y.get()))
-                toplevel.destroy()
+                x = int(station_x.get())
+                y = int(station_y.get())
             except ValueError:
                 tk.messagebox.showinfo("Error", "The coordinates must be integers.")
                 return
+            
+            if x == 0 and y == 0:
+                tk.messagebox.showinfo("Error", "There is already the main warehouse at these coordinates.")
+                return
+
+            if not -100 <= x <= 100 or not -100 <= y <= 100:
+                tk.messagebox.showinfo("Error", "The coordinates must be between -100 and 100.")
+                return
+
+            for station in self.data["stations"]:
+                if station["x"] == x and station["y"] == y:
+                    tk.messagebox.showinfo("Error", "There is already a station at these coordinates.")
+                    return
+
+            self.add_station(station_id, station_name.get(), x, y)
+            toplevel.destroy()
 
         toplevel.mainloop()
 
