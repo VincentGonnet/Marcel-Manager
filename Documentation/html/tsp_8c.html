@@ -76,12 +76,12 @@ $(function() {
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a9ba2918b96e6c5fa15a9eae3c26d50b2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tsp_8c.html#a9ba2918b96e6c5fa15a9eae3c26d50b2">least</a> (int indexNode)</td></tr>
-<tr class="memdesc:a9ba2918b96e6c5fa15a9eae3c26d50b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to calculate the closest node to the current node.  <a href="tsp_8c.html#a9ba2918b96e6c5fa15a9eae3c26d50b2">More...</a><br /></td></tr>
-<tr class="separator:a9ba2918b96e6c5fa15a9eae3c26d50b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80658ea1a4aead117bb217939aa79f8e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tsp_8c.html#a80658ea1a4aead117bb217939aa79f8e">mincost</a> (int node)</td></tr>
-<tr class="memdesc:a80658ea1a4aead117bb217939aa79f8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recursive function that calculates the shortest path to visit all the nodes, as well as the minimum cost of the path.  <a href="tsp_8c.html#a80658ea1a4aead117bb217939aa79f8e">More...</a><br /></td></tr>
-<tr class="separator:a80658ea1a4aead117bb217939aa79f8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8bf798004828083dfc164e38561dd817"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tsp_8c.html#a8bf798004828083dfc164e38561dd817">closest</a> (int indexNode)</td></tr>
+<tr class="memdesc:a8bf798004828083dfc164e38561dd817"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to calculate the closest node to the current node.  <a href="tsp_8c.html#a8bf798004828083dfc164e38561dd817">More...</a><br /></td></tr>
+<tr class="separator:a8bf798004828083dfc164e38561dd817"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86362015eacd2fbd1948cf6ce879f156"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tsp_8c.html#a86362015eacd2fbd1948cf6ce879f156">recursiveSolver</a> (int indexNode)</td></tr>
+<tr class="memdesc:a86362015eacd2fbd1948cf6ce879f156"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recursive function that calculates the shortest path to visit all the nodes, as well as the minimum cost of the path.  <a href="tsp_8c.html#a86362015eacd2fbd1948cf6ce879f156">More...</a><br /></td></tr>
+<tr class="separator:a86362015eacd2fbd1948cf6ce879f156"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3436be310dbbdc748849269966c1de7d"><td class="memItemLeft" align="right" valign="top">int *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tsp_8c.html#a3436be310dbbdc748849269966c1de7d">tsp</a> (int length, int rawNodes[])</td></tr>
 <tr class="memdesc:a3436be310dbbdc748849269966c1de7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Main function : Traveling Salesman Problem (closest neighbor), will be imported in python by ctypes.  <a href="tsp_8c.html#a3436be310dbbdc748849269966c1de7d">More...</a><br /></td></tr>
 <tr class="separator:a3436be310dbbdc748849269966c1de7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -119,14 +119,14 @@ Libraries/Modules</h1>
 <dl class="section author"><dt>Author</dt><dd>Vincent Gonnet</dd></dl>
 <dl class="section date"><dt>Date</dt><dd>2022/06/02 </dd></dl>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a9ba2918b96e6c5fa15a9eae3c26d50b2" name="a9ba2918b96e6c5fa15a9eae3c26d50b2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9ba2918b96e6c5fa15a9eae3c26d50b2">&#9670;&nbsp;</a></span>least()</h2>
+<a id="a8bf798004828083dfc164e38561dd817" name="a8bf798004828083dfc164e38561dd817"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8bf798004828083dfc164e38561dd817">&#9670;&nbsp;</a></span>closest()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int least </td>
+          <td class="memname">int closest </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>indexNode</em></td><td>)</td>
@@ -138,24 +138,24 @@ Libraries/Modules</h1>
 <p>Function to calculate the closest node to the current node. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">currentNode</td><td>The current node </td></tr>
+    <tr><td class="paramname">indexNode</td><td>The current node </td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<a id="a80658ea1a4aead117bb217939aa79f8e" name="a80658ea1a4aead117bb217939aa79f8e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a80658ea1a4aead117bb217939aa79f8e">&#9670;&nbsp;</a></span>mincost()</h2>
+<a id="a86362015eacd2fbd1948cf6ce879f156" name="a86362015eacd2fbd1948cf6ce879f156"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a86362015eacd2fbd1948cf6ce879f156">&#9670;&nbsp;</a></span>recursiveSolver()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void mincost </td>
+          <td class="memname">void recursiveSolver </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>node</em></td><td>)</td>
+          <td class="paramname"><em>indexNode</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -164,7 +164,7 @@ Libraries/Modules</h1>
 <p>Recursive function that calculates the shortest path to visit all the nodes, as well as the minimum cost of the path. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">currentNode</td><td>The current node </td></tr>
+    <tr><td class="paramname">indexNode</td><td>The current node </td></tr>
   </table>
   </dd>
 </dl>
