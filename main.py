@@ -82,6 +82,9 @@ class App(tk.Tk):
 
     ## @brief display the shortest path to visit all the stations
     def maintenance(self):
+        if len(self.data["stations"]) < 2:
+            tk.messagebox.showinfo("Not enough stations", "You need at least two stations in the database to use this feature.")
+            return
         fc = CDLL('./tsp.o') # load the library
         fc.tsp.argtypes = (c_int, POINTER(c_int)) # set the arguments' type of the function
         fc.tsp.restype = POINTER(c_int) # set the return type of the function
